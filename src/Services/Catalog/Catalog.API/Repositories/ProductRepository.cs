@@ -1,6 +1,7 @@
 ﻿using Catalog.API.Data;
 using Catalog.API.Entities;
 using MongoDB.Driver;
+using Catalog.API.Entities.ValueObjects;
 
 namespace Catalog.API.Repositories
 {
@@ -22,15 +23,17 @@ namespace Catalog.API.Repositories
         }
         public async Task<Product> GetProduct(string id)
         {
+            var productId = ProductId.Create(id).Value;
             return await _context
                            .Products
-                           .Find(p => p.Id == id)
+                           .Find(p => p.Id == productId)
                            .FirstOrDefaultAsync();
         }
 
         public async Task<IEnumerable<Product>> GetProductByName(string name)
         {
-            FilterDefinition<Product> filter = Builders<Product>.Filter.Eq(p => p.Name, name);
+            var productName = ProductName.Create(name).Value;
+            FilterDefinition<Product> filter = Builders<Product>.Filter.Eq(p => p.Name, productName);
 
             return await _context
                             .Products
@@ -40,7 +43,8 @@ namespace Catalog.API.Repositories
 
         public async Task<IEnumerable<Product>> GetProductByCategory(string categoryName)
         {
-            FilterDefinition<Product> filter = Builders<Product>.Filter.Eq(p => p.Category, categoryName);
+            var category = ProductCategory.Create(categoryName).Value;
+            FilterDefinition<Product> filter = Builders<Product>.Filter.Eq(p => p.Category, category);
 
             return await _context
                             .Products
@@ -64,7 +68,8 @@ namespace Catalog.API.Repositories
 
         public async Task<bool> DeleteProduct(string id)
         {
-            FilterDefinition<Product> filter = Builders<Product>.Filter.Eq(p => p.Id, id);
+            var productId = ProductId.Create(id).Value;
+            FilterDefinition<Product> filter = Builders<Product>.Filter.Eq(p => p.Id, productId);
 
             DeleteResult deleteResult = await _context
                                                 .Products
