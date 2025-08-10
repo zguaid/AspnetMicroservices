@@ -1,5 +1,6 @@
-﻿using Catalog.API.Entities;
+using Catalog.API.Entities;
 using Catalog.API.Repositories;
+using FluentResults;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -22,8 +23,12 @@ namespace Catalog.API.Controllers
         [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-            var products = await _repository.GetProducts();
-            return Ok(products);
+            var result = await _repository.GetProducts();
+            if (result.IsFailed)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, result.Errors);
+            }
+            return Ok(result.Value);
         }
 
         [HttpGet("{id:length(24)}", Name = "GetProduct")]
@@ -31,13 +36,13 @@ namespace Catalog.API.Controllers
         [ProducesResponseType(typeof(Product), (int)HttpStatusCode.OK)]
         public async Task<ActionResult<Product>> GetProductById(string id)
         {
-            var product = await _repository.GetProduct(id);
-            if (product == null)
+            var result = await _repository.GetProduct(id);
+            if (result.IsFailed)
             {
                 _logger.LogError($"Product with id: {id}, not found.");
-                return NotFound();
+                return NotFound(result.Errors);
             }
-            return Ok(product);
+            return Ok(result.Value);
         }
 
         [Route("[action]/{category}", Name = "GetProductByCategory")]
@@ -45,31 +50,53 @@ namespace Catalog.API.Controllers
         [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
         public async Task<ActionResult<IEnumerable<Product>>> GetProductByCategory(string category)
         {
-            var products = await _repository.GetProductByCategory(category);
-            return Ok(products);
+            var result = await _repository.GetProductByCategory(category);
+            if (result.IsFailed)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, result.Errors);
+            }
+            return Ok(result.Value);
         }
 
         [HttpPost]
         [ProducesResponseType(typeof(Product), (int)HttpStatusCode.OK)]
         public async Task<ActionResult<Product>> CreateProduct([FromBody] Product product)
         {
-            await _repository.CreateProduct(product);
+            var result = await _repository.CreateProduct(product);
 
-            return CreatedAtRoute("GetProduct", new { id = product.Id }, product);
+            if (result.IsFailed)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, result.Errors);
+            }
+
+            return CreatedAtRoute("GetProduct", new { id = result.Value.Id }, result.Value);
         }
 
         [HttpPut]
-        [ProducesResponseType(typeof(Product), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(bool), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> UpdateProduct([FromBody] Product product)
         {
-            return Ok(await _repository.UpdateProduct(product));
+            var result = await _repository.UpdateProduct(product);
+            if (result.IsFailed)
+            {
+                return NotFound(result.Errors);
+            }
+
+            return Ok(result.Value);
         }
 
         [HttpDelete("{id:length(24)}", Name = "DeleteProduct")]
-        [ProducesResponseType(typeof(Product), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(bool), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> DeleteProductById(string id)
         {
-            return Ok(await _repository.DeleteProduct(id));
+            var result = await _repository.DeleteProduct(id);
+            if (result.IsFailed)
+            {
+                return NotFound(result.Errors);
+            }
+
+            return Ok(result.Value);
         }
     }
 }
+

@@ -1,16 +1,18 @@
-﻿using Catalog.API.Entities;
+using Catalog.API.Entities;
+using FluentResults;
 
 namespace Catalog.API.Repositories
 {
     public interface IProductRepository
     {
-        Task<IEnumerable<Product>> GetProducts();
-        Task<Product> GetProduct(string id);
-        Task<IEnumerable<Product>> GetProductByName(string name);
-        Task<IEnumerable<Product>> GetProductByCategory(string categoryName);
+        Task<Result<IEnumerable<Product>>> GetProducts();
+        Task<Result<Product>> GetProduct(string id);
+        Task<Result<IEnumerable<Product>>> GetProductByName(string name);
+        Task<Result<IEnumerable<Product>>> GetProductByCategory(string categoryName);
 
-        Task CreateProduct(Product product);
-        Task<bool> UpdateProduct(Product product);
-        Task<bool> DeleteProduct(string id);
+        Task<Result<Product>> CreateProduct(Product product);
+        Task<Result<bool>> UpdateProduct(Product product);
+        Task<Result<bool>> DeleteProduct(string id);
     }
 }
+
